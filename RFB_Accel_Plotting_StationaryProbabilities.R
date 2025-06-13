@@ -118,25 +118,44 @@ colonies <- tribble(
   ~Site,  ~C_Lat,    ~C_Lon,
   "East_Island",         -7.23,     72.42)
 
-map <- ggplot(df_gps %>%
-         mutate(State = ifelse(row_number() == 5246, "Transit", State)) %>%
-         mutate(State = case_when(State == "Rest" ~ "Rest",
-                                  State == "Forage" ~ "Feed",
-                                  State == "Transit" ~ "Travel")) %>%
-           mutate(State = factor(State, levels = c("Feed", "Travel", "Rest")))) +
-  geom_path(aes(x = Lon, y = Lat, group = T, col = State), linewidth = 1) +
-  scale_colour_manual(values = c("#56B4E9", "#F0E442", "#D55E00")) +
-  scale_x_continuous(limits = c(min(df_gps$Lon - 0.15), max(df_gps$Lon + 0.15)),
-                     n.breaks = 5) +
-  scale_y_continuous(limits = c(min(df_gps$Lat, na.rm = T), max(df_gps$Lat, na.rm = T))) +
-  geom_sf(data = chagos, fill = "#000000", col = "#000000") +
-  # geom_point(data = colonies, aes(x = C_Lon, y = C_Lat), col = "#FFB000", size = 3) +
-  ylab("Latitude") +
-  xlab("Longitude") +
-  annotation_scale(location = "br", style = "ticks") +
+# Bathymetry too:
+library(marmap)
+base_topography_map <- getNOAA.bathy(lon1 = min(df_gps$Lon) - 1, lon2 = max(df_gps$Lon) + 1,
+                                     lat1 = min(df_gps$Lat) - 1, lat2 = max(df_gps$Lat) + 1, resolution = 1)
+base_topography_fort = fortify(base_topography_map)
+
+map_base <- ggplot() + 
+  geom_raster(data = base_topography_fort, aes(x=x, y=y, fill=z), alpha = 0.9) +
+  # add colour scheme for the fill
+  scale_fill_gradient(low = "grey30", high = "white", name = "Depth (m)") +
+  # add labels
+  labs(x = "Longitude", y = "Latitude") +
+  theme(axis.text=element_text(colour="black"),
+        axis.title.x = element_text(size = 15),
+        axis.text.x = element_text(hjust=0.7),
+        axis.title.y = element_text(angle=90, vjust = 0.4, size = 15),
+        axis.text.y = element_text(hjust=0.7, angle=90, vjust=0.3)) +
+  # set a theme
   theme_bw() +
-  theme(panel.grid = element_blank(),
-        legend.justification = c(1, 0), legend.position = c(1-0.01, 0.05))
+  annotation_scale(location = "br", style = "ticks") +
+  theme(panel.grid = element_blank())
+
+## map all tracking locations
+map_alllocs <- map_base + 
+  # add GPS points
+  geom_path(data = df_gps %>%
+              mutate(State = ifelse(row_number() == 5246, "Transit", State)) %>%
+              mutate(State = case_when(State == "Rest" ~ "Rest",
+                                       State == "Forage" ~ "Feed",
+                                       State == "Transit" ~ "Travel")) %>%
+              mutate(State = factor(State, levels = c("Feed", "Travel", "Rest"))),
+            aes(x = Lon, y = Lat, group = T, col = State), linewidth = 1) +
+  scale_colour_manual(values = c("#56B4E9", "#F0E442", "#D55E00")) +
+  geom_sf(data = chagos, aes(geometry = geometry), fill = "black", col = "black") +
+  geom_point(data = colonies, aes(x = C_Lon, y = C_Lat), shape = 8, col = "#009E73") +
+  coord_sf(xlim = c(min(df_gps$Lon)-0.2, max(df_gps$Lon)+0.2), 
+           ylim = c(min(df_gps$Lat)-0.2, max(df_gps$Lat)+0.2), crs = 4326, expand = F)
+map_alllocs
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -146,8 +165,8 @@ a <- s3 + s2 + s1 +
   plot_layout(axes = "collect", guides = "collect") &
   theme(legend.position = "none")
 
-map / a +
-  plot_layout(axes = "collect", heights = c(2,1)) +
+map_alllocs / a +
+  plot_layout(heights = c(1.6,1)) +
   plot_annotation(tag_levels = 'a') &
   theme(plot.tag = element_text(size = 8),
         axis.title = element_text(size = 8),
@@ -175,9 +194,9 @@ RFB_rest <- image_read("RFB_Accel_Plots/booby_resting.png") %>%
   image_scale("400x400")
 
 # Stack them on top of each other
-plot1 <- image_composite(plot, RFB_travel, offset = "+3700+3650")
-plot2 <- image_composite(plot1, RFB_feed, offset = "+3750+3200")
-plot3 <- image_composite(plot2, RFB_rest, offset = "+3680+4100")
+plot1 <- image_composite(plot, RFB_travel, offset = "+3300+3600")
+plot2 <- image_composite(plot1, RFB_feed, offset = "+3300+3150")
+plot3 <- image_composite(plot2, RFB_rest, offset = "+3260+4050")
 
 # And save
 image_write(plot3, "RFB_Accel_Plots/Final/Fig4_behavioural_states_RFBimage.png")
