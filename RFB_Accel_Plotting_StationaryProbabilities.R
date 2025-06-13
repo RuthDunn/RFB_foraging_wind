@@ -124,7 +124,7 @@ map <- ggplot(df_gps %>%
                                   State == "Forage" ~ "Feed",
                                   State == "Transit" ~ "Travel")) %>%
            mutate(State = factor(State, levels = c("Feed", "Travel", "Rest")))) +
-  geom_path(aes(x = Lon, y = Lat, group = T, col = State)) +
+  geom_path(aes(x = Lon, y = Lat, group = T, col = State), linewidth = 1) +
   scale_colour_manual(values = c("#56B4E9", "#F0E442", "#D55E00")) +
   scale_x_continuous(limits = c(min(df_gps$Lon - 0.15), max(df_gps$Lon + 0.15)),
                      n.breaks = 5) +
@@ -180,6 +180,6 @@ plot2 <- image_composite(plot1, RFB_feed, offset = "+3750+3200")
 plot3 <- image_composite(plot2, RFB_rest, offset = "+3680+4100")
 
 # And save
-image_write(plot3, "RFB_Accel_Plots/Fig4_behavioural_states_RFBimage.png")
+image_write(plot3, "RFB_Accel_Plots/Final/Fig4_behavioural_states_RFBimage.png")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

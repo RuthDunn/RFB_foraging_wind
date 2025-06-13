@@ -51,45 +51,45 @@ gps_dat <- left_join(fread("RFB_Accel_Data/Accel_6_flight_variables/DG_GPS_segme
 # Modelling ####
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Model flight speed ####
-
-head(gps_dat)
-
-speed_mod <- brm(bf(speed ~ t2(wind_speed_sc, relwinddir_sc, k = 4) +
-                      (1|Individual) + (1|Trip:Individual)),
-                 control = list(adapt_delta = 0.85),
-                 chains = 4, iter = 2000, warmup = 1000,
-                 family = gaussian(), data = gps_dat)
-
-# Save for later:
-saveRDS(speed_mod, file="RFB_Accel_Models/Flight_speed_mod_t2.rds")
-
-# Check convergence and fit:
-pp_check(speed_mod) # posterior predictive plot
-plot(speed_mod) # trace plots
-summary(speed_mod) # ESS & R-hat
-
-conditional_effects(speed_mod)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Model flap proportion ####
-
-flap_mod <- brm(bf(Flap_proportion ~ t2(wind_speed_sc, relwinddir_sc, k = 4) +
-                     (1|Individual) + (1|Trip:Individual)),
-                control = list(adapt_delta = 0.95),
-                chains = 4, iter = 2000, warmup = 1000,
-                family = Beta(), data = gps_dat)
-
-# Save for later:
-saveRDS(flap_mod, file="RFB_Accel_Models/Flap_proportion_mod_t2.rds")
-
-# Check convergence and fit:
-pp_check(flap_mod) # posterior predictive plot
-plot(flap_mod) # trace plots
-summary(flap_mod) # ESS & R-hat
-
-conditional_effects(flap_mod)
+# # Model flight speed ####
+# 
+# head(gps_dat)
+# 
+# speed_mod <- brm(bf(speed ~ t2(wind_speed_sc, relwinddir_sc, k = 4) +
+#                       (1|Individual) + (1|Trip:Individual)),
+#                  control = list(adapt_delta = 0.85),
+#                  chains = 4, iter = 2000, warmup = 1000,
+#                  family = gaussian(), data = gps_dat)
+# 
+# # Save for later:
+# saveRDS(speed_mod, file="RFB_Accel_Models/Flight_speed_mod_t2.rds")
+# 
+# # Check convergence and fit:
+# pp_check(speed_mod) # posterior predictive plot
+# plot(speed_mod) # trace plots
+# summary(speed_mod) # ESS & R-hat
+# 
+# conditional_effects(speed_mod)
+# 
+# # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 
+# # Model flap proportion ####
+# 
+# flap_mod <- brm(bf(Flap_proportion ~ t2(wind_speed_sc, relwinddir_sc, k = 4) +
+#                      (1|Individual) + (1|Trip:Individual)),
+#                 control = list(adapt_delta = 0.95),
+#                 chains = 4, iter = 2000, warmup = 1000,
+#                 family = Beta(), data = gps_dat)
+# 
+# # Save for later:
+# saveRDS(flap_mod, file="RFB_Accel_Models/Flap_proportion_mod_t2.rds")
+# 
+# # Check convergence and fit:
+# pp_check(flap_mod) # posterior predictive plot
+# plot(flap_mod) # trace plots
+# summary(flap_mod) # ESS & R-hat
+# 
+# conditional_effects(flap_mod)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Plotting ####
@@ -272,7 +272,7 @@ RFB_img <- image_read("RFB_Accel_Plots/booby_flying.png") %>%
 plot1 <- image_composite(plot, RFB_img, offset = "+3850+40")
 
 # And save
-image_write(plot1, "RFB_Accel_Plots/Fig3_flight_behaviour_RFBimage.png")
+image_write(plot1, "RFB_Accel_Plots/Final/Fig3_flight_behaviour_RFBimage.png")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

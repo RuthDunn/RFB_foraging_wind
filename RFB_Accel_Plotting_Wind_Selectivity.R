@@ -74,7 +74,7 @@ summary(dat_outbound$relative_wind_dir)
 
 # Get rotated map bits ready ####
 
-chagos = read_sf("C:/Users/dunn/Dropbox/HW_Seabird_Postdoc/RFB_Diving/RFB_Diving_Data/Chagos_Maps/chagos_maps/Chagos_v6_land_simple.shp")
+chagos = read_sf("C:/Users/Ruth/Dropbox/HW_Seabird_Postdoc/RFB_Diving/RFB_Diving_Data/Chagos_Maps/chagos_maps/Chagos_v6_land_simple.shp")
 
 # GY02207_trip2
 
@@ -144,13 +144,13 @@ rm(nc_dat, fillvalue)
 
 # Create 3D raster bricks
 u_brick <- brick(u_array,
-                 xmn = min(repl_dat$Lon)-1, xmx = max(repl_dat$Lon)+1,
-                 ymn = min(repl_dat$Lat)-1, ymx = max(repl_dat$Lat)+1,
+                 xmn = min(repl_dat_in$Lon)-1, xmx = max(repl_dat_out$Lon)+1,
+                 ymn = min(repl_dat_out$Lat)-1, ymx = max(repl_dat_in$Lat)+1,
                  crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
 
 v_brick <- brick(v_array,
-                 xmn = min(repl_dat$Lon)-1, xmx = max(repl_dat$Lon)+1,
-                 ymn = min(repl_dat$Lat)-1, ymx = max(repl_dat$Lat)+1,
+                 xmn = min(repl_dat_in$Lon)-1, xmx = max(repl_dat_out$Lon)+1,
+                 ymn = min(repl_dat_out$Lat)-1, ymx = max(repl_dat_in$Lat)+1,
                  crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
 
 # Extract tracking period sections
@@ -210,14 +210,15 @@ rotated_tracks_map <- ggplot(repl_dat_out) +
         panel.grid = element_blank(),
         legend.margin = margin(),
         axis.title = element_blank()) +
-  scale_x_continuous(breaks = pretty(repl_dat$Lon, n = 3)) +
-  scale_y_continuous(breaks = pretty(repl_dat$Lat, n = 3))
+  scale_x_continuous(breaks = pretty(repl_dat_in$Lon, n = 3)) +
+  scale_y_continuous(breaks = pretty(repl_dat_in$Lat, n = 3)) +
+  geom_point(aes(x = CP_Lon, y = CP_Lat), shape = 8, col = "#009E73")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # WIND EXAMPLE MAP ####
 
-wind_example_map <- ggplot(repl_dat) +
+wind_example_map <- ggplot() +
   geom_raster(data = wind_df, aes(x = Lon, y = Lat, fill = wind_speed)) +
   geom_segment(data = wind_df, aes(x = Lon, y = Lat, xend = Lon + 0.2 * u, yend = Lat + 0.2 * v),
                arrow = arrow(length = unit(0.3, "cm")), linewidth = 0.3, alpha = 0.5) +
@@ -234,8 +235,9 @@ wind_example_map <- ggplot(repl_dat) +
         legend.margin = margin(),
         axis.title = element_blank(),
         legend.key.height = unit(0.2, "cm")) +
-  scale_x_continuous(breaks = pretty(repl_dat$Lon, n = 3)) +
-  scale_y_continuous(breaks = pretty(repl_dat$Lat, n = 3))
+  scale_x_continuous(breaks = pretty(repl_dat_in$Lon, n = 3)) +
+  scale_y_continuous(breaks = pretty(repl_dat_in$Lat, n = 3)) +
+  geom_point(data = repl_dat_in, aes(x = CP_Lon, y = CP_Lat), shape = 8, col = "#009E73")
 
 rotated_tracks_map + wind_example_map
 
@@ -479,7 +481,7 @@ RFB_img <- image_read("RFB_Accel_Plots/booby_flying.png") %>%
 plot1 <- image_composite(plot, RFB_img, offset = "+3400+60")
 
 # And save
-image_write(plot1, "RFB_Accel_Plots/Fig2_selectivity_RFBimage.png")
+image_write(plot1, "RFB_Accel_Plots/Final/Fig2_selectivity_RFBimage.png")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
