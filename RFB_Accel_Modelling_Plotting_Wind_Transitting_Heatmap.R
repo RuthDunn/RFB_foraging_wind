@@ -105,10 +105,14 @@ speed_mod <- readRDS("RFB_Accel_Models/Flight_speed_mod_t2.rds")
 # Create new data frames, calculating predictions:
 
 new_speed_wind <- expand.grid(
-  relwinddir_sc = seq(min(gps_dat$relwinddir_sc, na.rm = TRUE), max(gps_dat$relwinddir_sc, na.rm = TRUE),
-                      length.out = 20),
-  wind_speed_sc = seq(min(gps_dat$wind_speed_sc, na.rm = TRUE), max(gps_dat$wind_speed_sc, na.rm = TRUE),
-                      length.out = 6),
+  wind_speed = seq(0, 12, length.out = 12),
+  relative_wind_dir = seq(0, 180, length.out = 14)) %>%
+  # Manually scale using the same parameters as in your model
+  mutate(
+    wind_speed_sc = (wind_speed - mean(gps_dat$wind_speed, na.rm = TRUE)) /
+      sd(gps_dat$wind_speed, na.rm = TRUE),
+    relwinddir_sc = (relative_wind_dir - mean(gps_dat$relative_wind_dir, na.rm = TRUE)) /
+      sd(gps_dat$relative_wind_dir, na.rm = TRUE),
   bodymass_sc = mean(gps_dat$bodymass_sc),
   Trip_section = "Outbound") %>%
   mutate(
@@ -122,16 +126,21 @@ new_speed_wind <- expand.grid(
     lower = posterior_epred(speed_mod, newdata = ., re_formula = NA) %>% apply(2, quantile, probs = 0.025),
     upper = posterior_epred(speed_mod, newdata = ., re_formula = NA) %>% apply(2, quantile, probs = 0.975)) %>%
   mutate(wind_speed_bin = cut(wind_speed, 
-                              breaks = seq(0, 12, by = 2),  # Defines bin edges (0-2, 2-4, ..., 10-12)
-                              labels = c("0-2", "2-4", "4-6", "6-8", "8-10", "10-12"),  # Labels for bins
+                              breaks = seq(0, 12, by = 1),  # Defines bin edges (0-2, 2-4, ..., 10-12)
+                              labels = c("0-1", "1-2", "2-3", "3-4", "4-5", "5-6",
+                                         "6-7", "7-8", "8-9", "9-10", "10-11", "11-12"),  # Labels for bins
                               include.lowest = TRUE,  # Ensures 0 is included
                               right = FALSE))
 
 new_flap_wind <- expand.grid(
-  relwinddir_sc = seq(min(gps_dat$relwinddir_sc, na.rm = TRUE), max(gps_dat$relwinddir_sc, na.rm = TRUE),
-                      length.out = 20),
-  wind_speed_sc = seq(min(gps_dat$wind_speed_sc, na.rm = TRUE), max(gps_dat$wind_speed_sc, na.rm = TRUE),
-                      length.out = 6),
+  wind_speed = seq(0, 12, length.out = 12),
+  relative_wind_dir = seq(0, 180, length.out = 14)) %>%
+  # Manually scale using the same parameters as in your model
+  mutate(
+    wind_speed_sc = (wind_speed - mean(gps_dat$wind_speed, na.rm = TRUE)) /
+      sd(gps_dat$wind_speed, na.rm = TRUE),
+    relwinddir_sc = (relative_wind_dir - mean(gps_dat$relative_wind_dir, na.rm = TRUE)) /
+      sd(gps_dat$relative_wind_dir, na.rm = TRUE),
   bodymass_sc = mean(gps_dat$bodymass_sc),
   Trip_section = "Outbound") %>%
   mutate(
@@ -145,8 +154,9 @@ new_flap_wind <- expand.grid(
     lower = posterior_epred(flap_mod, newdata = ., re_formula = NA) %>% apply(2, quantile, probs = 0.025),
     upper = posterior_epred(flap_mod, newdata = ., re_formula = NA) %>% apply(2, quantile, probs = 0.975)) %>%
   mutate(wind_speed_bin = cut(wind_speed, 
-                              breaks = seq(0, 12, by = 2),  # Defines bin edges (0-2, 2-4, ..., 10-12)
-                              labels = c("0-2", "2-4", "4-6", "6-8", "8-10", "10-12"),  # Labels for bins
+                              breaks = seq(0, 12, by = 1),  # Defines bin edges (0-2, 2-4, ..., 10-12)
+                              labels = c("0-1", "1-2", "2-3", "3-4", "4-5", "5-6",
+                                         "6-7", "7-8", "8-9", "9-10", "10-11", "11-12"),  # Labels for bins
                               include.lowest = TRUE,  # Ensures 0 is included
                               right = FALSE))
 
@@ -154,72 +164,102 @@ new_flap_wind <- expand.grid(
 
 # Make plots of variables + wind ####
 
-speed_wind <- ggplot(gps_dat) +
-  geom_point(aes(y = speed, x = relative_wind_dir, col = wind_speed_bin),
-             alpha = 0.4, size = 0.75) +
-  geom_ribbon(data = new_speed_wind,
-              aes(x = relative_wind_dir, ymin = lower, ymax = upper,
-                  group = wind_speed_bin, fill = wind_speed_bin),
-              alpha = 0.4) +
-  geom_line(data = new_speed_wind, 
-            aes(x = relative_wind_dir, y = predicted_speed, group = wind_speed_bin, col = wind_speed_bin),
-            linewidth = 1) +
-  scale_colour_viridis_d(option = "C", name = expression("Wind speed (ms"^-1*")"),
-                         guide = guide_legend(nrow = 1)) +
-  scale_fill_viridis_d(option = "C", name = expression("Wind speed (ms"^-1*")"),
-                       guide = guide_legend(nrow = 1)) +
+speed_wind_heatmap <- ggplot(new_speed_wind,
+                             aes(x = relative_wind_dir,
+                                 y = wind_speed_bin,
+                                 fill = predicted_speed)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "B", name = expression("Ground speed (ms"^-1*")")) +
+  scale_y_discrete(name = expression("Wind speed (ms"^-1*")")) +
+  scale_x_continuous(name = expression("Relative wind direction (tailwind \u2194 headwind)"),
+                     breaks = c(0, 45, 90, 135, 180)) +
   theme_bw() +
-  labs(y = expression("Ground speed (ms"^-1*")"),
-       x = expression("Relative wind direction (tailwind \u2194 headwind)")) +
-  theme(legend.position = "bottom",
-        panel.grid.minor = element_blank(),
-        legend.margin = margin(),
-        axis.title = element_text(size = 8)) +
-  scale_x_continuous(breaks = c(0,45,90,135,180), labels = c(0,45,90,135,180), limits = c(0,180))
-  
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 8))
+speed_wind_heatmap  
 
-flap_wind <- ggplot(gps_dat) +
-  geom_point(aes(y = Flap_proportion, x = relative_wind_dir, col = wind_speed_bin),
-             alpha = 0.4, size = 0.75) +
-  geom_ribbon(data = new_flap_wind,
-              aes(x = relative_wind_dir, ymin = lower, ymax = upper,
-                  group = wind_speed_bin, fill = wind_speed_bin),
-              alpha = 0.4) +
-  geom_line(data = new_flap_wind, 
-            aes(x = relative_wind_dir, y = predicted_speed, group = wind_speed_bin, col = wind_speed_bin),
-            linewidth = 1) +
-  scale_colour_viridis_d(option = "C", name = expression("Wind speed (ms"^-1*")"),
-                         guide = guide_legend(nrow = 1)) +
-  scale_fill_viridis_d(option = "C", name = expression("Wind speed (ms"^-1*")"),
-                       guide = guide_legend(nrow = 1)) +
+flap_wind_heatmap <- ggplot(new_flap_wind,
+                            aes(x = relative_wind_dir,
+                                y = wind_speed_bin,
+                                fill = predicted_speed)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "A", name = "Proportion\nflapping") +
+  scale_y_discrete(name = expression("Wind speed (ms"^-1*")")) +
+  scale_x_continuous(name = expression("Relative wind direction (tailwind \u2194 headwind)"),
+                     breaks = c(0, 45, 90, 135, 180)) +
   theme_bw() +
-  labs(y = expression("Proportion flapping"),
-       x = expression("Relative wind direction (tailwind \u2194 headwind)")) +
-  theme(legend.position = "bottom",
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 8))
+
+flap_wind_heatmap
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Add in viloin plots ####
+
+gps_dat <- gps_dat %>%
+  mutate(x = 1)
+
+flap_violin <- ggplot(gps_dat, aes(x = Flap_proportion)) +
+  # Fill each histogram bar using the x axis category that ggplot creates
+  geom_histogram(
+    aes(fill = after_stat((x))), 
+    binwidth = .05, boundary = 0, color = "white") +
+  # Fill with the same palette as the map
+  scale_fill_viridis_c(option = "A", name = "Proportion\nflapping",
+                       limits = c(min(new_flap_wind$predicted_speed),
+                                  max(new_flap_wind$predicted_speed)),   # Match the limits of the heatmap
+                       oob = scales::squish) +
+  theme_bw() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
         panel.grid.minor = element_blank(),
-        legend.margin = margin(),
-        axis.title = element_text(size = 8)) +
-  scale_x_continuous(breaks = c(0,45,90,135,180), labels = c(0,45,90,135,180), limits = c(0,180))
+        panel.grid.major.y = element_blank(),
+        axis.title = element_text(size = 8),
+        legend.position = "none") +
+  labs(x = expression("Proportion flapping"))
+flap_violin
+
+speed_violin <- ggplot(gps_dat, aes(x = speed)) + 
+  geom_histogram(aes(fill = after_stat(x)),
+                 binwidth = 1, boundary = 0, colour = "white") +
+  scale_fill_viridis_c(option = "B", name = expression("Ground speed (ms"^-1*")"),
+                       limits = c(min(new_speed_wind$predicted_speed),
+                                  max(new_speed_wind$predicted_speed)),
+                       oob = scales::squish) +
+  theme_bw() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.title = element_text(size = 8),
+        legend.position = "none") +
+  labs(x = expression("Ground speed (ms"^-1*")"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Save plots ####
 
-combined_plot <- (flap_wind + speed_wind +
-                    plot_layout(nrow = 1,
-                                ncol = 2,
-                                guides = "collect") &
-                    theme(legend.position = "bottom",
+
+design <- "AABB
+           AABB
+           CCDD"
+
+flap_wind_heatmap + speed_wind_heatmap + flap_violin + speed_violin +
+  plot_layout(design = design, axes = "collect_y") &
+                    theme(legend.position = "none",
                           plot.tag = element_text(size = 9),
                           axis.title = element_text(size = 9),
                           axis.text = element_text(size = 9),
                           legend.title = element_text(size = 9),
-                          legend.text = element_text(size = 9)))
-
-combined_plot +
+                          legend.text = element_text(size = 9)) &
   plot_annotation(tag_levels = 'a')
 
-ggsave("RFB_Accel_Plots/Transit_wind.png", height = 4, width = 8, dpi = 600)
+ggsave("RFB_Accel_Plots/Transit_wind.png", height = 5, width = 8.5, dpi = 600)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -235,7 +275,7 @@ RFB_img <- image_read("RFB_Accel_Plots/booby_flying.png") %>%
   image_scale("700x700")
 
 # Stack them on top of each other
-plot1 <- image_composite(plot, RFB_img, offset = "+3850+40")
+plot1 <- image_composite(plot, RFB_img, offset = "+4300+100")
 
 # And save
 image_write(plot1, "RFB_Accel_Plots/Final/Fig3_flight_behaviour_RFBimage.png")
