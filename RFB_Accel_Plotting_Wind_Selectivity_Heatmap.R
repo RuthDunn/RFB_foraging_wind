@@ -212,7 +212,7 @@ rotated_tracks_map <- ggplot(repl_dat_out) +
         axis.title = element_blank()) +
   scale_x_continuous(breaks = pretty(repl_dat_in$Lon, n = 3)) +
   scale_y_continuous(breaks = pretty(repl_dat_in$Lat, n = 3)) +
-  geom_point(aes(x = CP_Lon, y = CP_Lat), shape = 8, col = "#009E73")
+  geom_point(aes(x = CP_Lon, y = CP_Lat), shape = 8, col = "magenta")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -236,7 +236,7 @@ wind_example_map <- ggplot() +
         legend.key.height = unit(0.2, "cm")) +
   scale_x_continuous(breaks = pretty(repl_dat_in$Lon, n = 3)) +
   scale_y_continuous(breaks = pretty(repl_dat_in$Lat, n = 3)) +
-  geom_point(data = repl_dat_in, aes(x = CP_Lon, y = CP_Lat), shape = 8, col = "#009E73")
+  geom_point(data = repl_dat_in, aes(x = CP_Lon, y = CP_Lat), shape = 8, col = "magenta")
 
 rotated_tracks_map + wind_example_map
 

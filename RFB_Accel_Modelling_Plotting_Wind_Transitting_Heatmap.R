@@ -199,15 +199,7 @@ flap_wind_heatmap
 
 # Add in viloin plots ####
 
-gps_dat <- gps_dat %>%
-  mutate(x = 1,
-         Flap_capped = case_when(
-           Flap_proportion < 0.3 ~ 0.3,
-           Flap_proportion > 0.6 ~ 0.6,
-           TRUE ~ Flap_proportion
-         ))
-
-flap_violin <- ggplot(gps_dat, aes(x = Flap_capped)) +
+flap_violin <- ggplot(gps_dat, aes(x = Flap_proportion)) +
   # Fill each histogram bar using the x axis category that ggplot creates
   geom_histogram(
     aes(fill = after_stat((x))), 
@@ -218,10 +210,6 @@ flap_violin <- ggplot(gps_dat, aes(x = Flap_capped)) +
                                   max(new_flap_wind$predicted_speed)),   # Match the limits of the heatmap
                        oob = scales::squish) +
   theme_bw() +
-  scale_x_continuous(
-    breaks = c(0.3, 0.4, 0.5, 0.6),
-    labels = c("<0.3", "0.4", "0.5", ">0.6")
-  ) +
   theme(axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
         axis.title.y = element_blank(),
@@ -232,14 +220,7 @@ flap_violin <- ggplot(gps_dat, aes(x = Flap_capped)) +
   labs(x = expression("Proportion flapping"))
 flap_violin
 
-gps_dat <- gps_dat %>%
-  mutate(Speed_capped = case_when(
-           speed < 5 ~ 5,
-           speed > 13 ~ 13,
-           TRUE ~ speed
-         ))
-
-speed_violin <- ggplot(gps_dat, aes(x = Speed_capped)) + 
+speed_violin <- ggplot(gps_dat, aes(x = speed)) + 
   geom_histogram(
     aes(fill = after_stat((x))), 
     binwidth = 1, boundary = 0, color = "white") +
@@ -248,10 +229,6 @@ speed_violin <- ggplot(gps_dat, aes(x = Speed_capped)) +
                                   max(new_speed_wind$predicted_speed)),
                        oob = scales::squish) +
   theme_bw() +
-  scale_x_continuous(
-    breaks = c(5, 6, 7, 8, 9, 10, 11, 12, 13),
-    labels = c("<5", "6", "7", "8", "9", "10", "11", "12", ">13")
-  ) +
   theme(axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
         axis.title.y = element_blank(),
