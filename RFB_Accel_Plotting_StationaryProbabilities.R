@@ -152,7 +152,7 @@ map_alllocs <- map_base +
             aes(x = Lon, y = Lat, group = T, col = State), linewidth = 1) +
   scale_colour_manual(values = c("#56B4E9", "#F0E442", "#D55E00")) +
   geom_sf(data = chagos, aes(geometry = geometry), fill = "black", col = "black") +
-  geom_point(data = colonies, aes(x = C_Lon, y = C_Lat), shape = 8, col = "#009E73") +
+  geom_point(data = colonies, aes(x = C_Lon, y = C_Lat), shape = 8, col = "magenta") +
   coord_sf(xlim = c(min(df_gps$Lon)-0.2, max(df_gps$Lon)+0.2), 
            ylim = c(min(df_gps$Lat)-0.2, max(df_gps$Lat)+0.2), crs = 4326, expand = F)
 map_alllocs
